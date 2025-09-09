@@ -41,7 +41,7 @@ Un outil web gratuit et open-source pour créer, gérer et analyser vos personas
 4. Cliquez sur "📍 Positionner"
 5. Répétez pour tous vos personas
 
-### 3. Exportation
+### 3. Exports
 - **Persona individuel** : Bouton "📄 PDF" dans la liste des personas sauvegardés
 - **Matrice complète** : Utilisez les boutons d'export dans la section matrice
 - **Données globales** : "📊 Exporter données" pour un backup JSON
