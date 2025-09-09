@@ -1,8 +1,8 @@
-# 🎯 Générateur de Fiches Personas
+# Générateur de Fiches Personas
 
 Un outil web gratuit et open-source pour créer, gérer et analyser vos personas marketing de manière professionnelle.
 
-## ✨ Fonctionnalités principales
+##  Fonctionnalités principales
 
 ### 👤 Création de Personas
 - **Formulaire complet** : Identité, psychographie, comportement d'achat
@@ -20,7 +20,7 @@ Un outil web gratuit et open-source pour créer, gérer et analyser vos personas
   - 🔴 **Dilemme** : Faible valeur, petit volume (à questionner)
 - **Interface interactive** : Glisser-déposer pour positionner les personas
 
-### 📁 Exportation Multi-formats
+### 📁 Exports Multi-formats
 - **PDF personnalisés** : Fiches personas professionnelles
 - **Images PNG** : Captures de la matrice de positionnement
 - **Données JSON** : Export structuré pour analyse externe
@@ -86,7 +86,7 @@ Cet outil est **100% gratuit** et **open source** :
 ### Pour les développeurs
 ```bash
 # Cloner le projet
-git clone [URL_DU_REPOSITORY]
+git clone https://github.com/friteuseb/generateur_personas
 
 # Ouvrir le fichier
 open index.html
