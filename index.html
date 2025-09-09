@@ -494,6 +494,12 @@
                         </div>
                         
                         <div style="margin-top: 20px;">
+                            <button class="btn" onclick="exportMatrixImage()">📸 Exporter image</button>
+                            <button class="btn btn-secondary" onclick="exportMatrixData()">📊 Exporter données</button>
+                            <button class="btn btn-success" onclick="exportMatrixPDF()">📄 Exporter PDF</button>
+                        </div>
+                        
+                        <div style="margin-top: 20px;">
                             <h4>Légende des quadrants</h4>
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px;">
                                 <div style="padding: 10px; background: rgba(40, 167, 69, 0.1); border-left: 4px solid #28a745; border-radius: 4px;">
@@ -1163,6 +1169,340 @@
             
             loadPersonasForPositioning();
             showStatus(`✅ ${persona.name} positionné sur la matrice`);
+        }
+
+        // Fonctions d'exportation de la matrice
+        function exportMatrixImage() {
+            const matrix = document.getElementById('matrix');
+            
+            // Utiliser html2canvas si disponible, sinon utiliser une solution alternative
+            if (typeof html2canvas !== 'undefined') {
+                html2canvas(matrix).then(canvas => {
+                    const link = document.createElement('a');
+                    link.download = `matrice-positionnement-${new Date().toISOString().split('T')[0]}.png`;
+                    link.href = canvas.toDataURL();
+                    link.click();
+                    showStatus('📸 Image de la matrice exportée');
+                });
+            } else {
+                // Solution alternative : créer un canvas manuellement
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = 500;
+                canvas.height = 500;
+                
+                // Fond blanc
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, 500, 500);
+                
+                // Quadrillage
+                ctx.strokeStyle = '#f8f9fa';
+                ctx.lineWidth = 1;
+                for (let i = 0; i <= 500; i += 20) {
+                    ctx.beginPath();
+                    ctx.moveTo(i, 0);
+                    ctx.lineTo(i, 500);
+                    ctx.stroke();
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(0, i);
+                    ctx.lineTo(500, i);
+                    ctx.stroke();
+                }
+                
+                // Axes
+                ctx.strokeStyle = '#dee2e6';
+                ctx.lineWidth = 2;
+                // Axe vertical
+                ctx.beginPath();
+                ctx.moveTo(250, 0);
+                ctx.lineTo(250, 500);
+                ctx.stroke();
+                // Axe horizontal
+                ctx.beginPath();
+                ctx.moveTo(0, 250);
+                ctx.lineTo(500, 250);
+                ctx.stroke();
+                
+                // Labels des quadrants
+                ctx.font = 'bold 12px Arial';
+                ctx.fillStyle = '#28a745';
+                ctx.fillText('Champions', 380, 30);
+                ctx.fillStyle = '#ffc107';
+                ctx.fillText('Pépites', 20, 30);
+                ctx.fillStyle = '#6c757d';
+                ctx.fillText('Masse', 380, 480);
+                ctx.fillStyle = '#dc3545';
+                ctx.fillText('Dilemme', 20, 480);
+                
+                // Dessiner les personas positionnés
+                Object.keys(positionedPersonas).forEach(personaId => {
+                    const position = positionedPersonas[personaId];
+                    let color = '#6c757d';
+                    if (position.valueScore > 5 && position.volumeScore > 5) color = '#28a745';
+                    else if (position.valueScore > 5 && position.volumeScore <= 5) color = '#ffc107';
+                    else if (position.valueScore <= 5 && position.volumeScore > 5) color = '#6c757d';
+                    else color = '#dc3545';
+                    
+                    ctx.fillStyle = color;
+                    ctx.beginPath();
+                    ctx.arc(position.x + 20, position.y + 20, 20, 0, 2 * Math.PI);
+                    ctx.fill();
+                    
+                    // Initiale du persona
+                    ctx.fillStyle = 'white';
+                    ctx.font = 'bold 14px Arial';
+                    ctx.textAlign = 'center';
+                    const personaElement = document.getElementById(`persona-${personaId}`);
+                    if (personaElement) {
+                        ctx.fillText(personaElement.innerHTML, position.x + 20, position.y + 25);
+                    }
+                });
+                
+                // Télécharger l'image
+                const link = document.createElement('a');
+                link.download = `matrice-positionnement-${new Date().toISOString().split('T')[0]}.png`;
+                link.href = canvas.toDataURL();
+                link.click();
+                showStatus('📸 Image de la matrice exportée');
+            }
+        }
+
+        function exportMatrixData() {
+            const matrixData = {
+                exportDate: new Date().toISOString(),
+                positionedPersonas: {},
+                quadrantAnalysis: {
+                    champions: [],
+                    pepites: [],
+                    masse: [],
+                    dilemme: []
+                }
+            };
+            
+            // Récupérer les données des personas positionnés
+            Object.keys(positionedPersonas).forEach(personaId => {
+                const stmt = db.prepare("SELECT * FROM personas WHERE id = ?");
+                stmt.bind([personaId]);
+                if (stmt.step()) {
+                    const persona = stmt.getAsObject();
+                    const position = positionedPersonas[personaId];
+                    
+                    const personaData = {
+                        ...persona,
+                        valueScore: position.valueScore,
+                        volumeScore: position.volumeScore,
+                        position: {
+                            x: position.x,
+                            y: position.y
+                        }
+                    };
+                    
+                    matrixData.positionedPersonas[personaId] = personaData;
+                    
+                    // Classer par quadrant
+                    if (position.valueScore > 5 && position.volumeScore > 5) {
+                        matrixData.quadrantAnalysis.champions.push(personaData);
+                    } else if (position.valueScore > 5 && position.volumeScore <= 5) {
+                        matrixData.quadrantAnalysis.pepites.push(personaData);
+                    } else if (position.valueScore <= 5 && position.volumeScore > 5) {
+                        matrixData.quadrantAnalysis.masse.push(personaData);
+                    } else {
+                        matrixData.quadrantAnalysis.dilemme.push(personaData);
+                    }
+                }
+                stmt.free();
+            });
+            
+            const dataStr = JSON.stringify(matrixData, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(dataBlob);
+            link.download = `matrice-positionnement-${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            
+            showStatus('📊 Données de la matrice exportées');
+        }
+
+        function exportMatrixPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            const margin = 20;
+            let y = margin;
+            const pageWidth = doc.internal.pageSize.width;
+            const colors = {
+                primary: [102, 126, 234],
+                champions: [40, 167, 69],
+                pepites: [255, 193, 7],
+                masse: [108, 117, 125],
+                dilemme: [220, 53, 69]
+            };
+            
+            // En-tête
+            doc.setFillColor(...colors.primary);
+            doc.rect(0, 0, pageWidth, 40, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(24);
+            doc.setFont('helvetica', 'bold');
+            doc.text('MATRICE DE POSITIONNEMENT', margin, 25);
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`Analyse Valeur vs Volume - ${new Date().toLocaleDateString('fr-FR')}`, margin, 35);
+            
+            y = 60;
+            
+            // Dessiner la matrice
+            const matrixSize = 120;
+            const matrixX = margin;
+            const matrixY = y;
+            
+            // Fond et quadrillage
+            doc.setDrawColor(238, 238, 238);
+            doc.setLineWidth(0.5);
+            for (let i = 0; i <= 10; i++) {
+                const x = matrixX + (i * matrixSize / 10);
+                const yLine = matrixY + (i * matrixSize / 10);
+                doc.line(matrixX, yLine, matrixX + matrixSize, yLine);
+                doc.line(x, matrixY, x, matrixY + matrixSize);
+            }
+            
+            // Bordure de la matrice
+            doc.setDrawColor(0, 0, 0);
+            doc.setLineWidth(1);
+            doc.rect(matrixX, matrixY, matrixSize, matrixSize);
+            
+            // Axes centraux
+            doc.setDrawColor(108, 117, 125);
+            doc.setLineWidth(1);
+            doc.line(matrixX + matrixSize/2, matrixY, matrixX + matrixSize/2, matrixY + matrixSize);
+            doc.line(matrixX, matrixY + matrixSize/2, matrixX + matrixSize, matrixY + matrixSize/2);
+            
+            // Labels des axes
+            doc.setTextColor(0, 0, 0);
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'bold');
+            // Axe Y (Valeur)
+            doc.text('VALEUR', matrixX - 15, matrixY + matrixSize/2 - 5);
+            doc.text('CLIENT', matrixX - 15, matrixY + matrixSize/2 + 5);
+            // Axe X (Volume)
+            doc.text('VOLUME POTENTIEL', matrixX + matrixSize/2 - 25, matrixY + matrixSize + 15);
+            
+            // Labels des quadrants
+            doc.setFontSize(8);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(...colors.champions);
+            doc.text('Champions', matrixX + matrixSize - 25, matrixY + 10);
+            doc.setTextColor(...colors.pepites);
+            doc.text('Pepites', matrixX + 5, matrixY + 10);
+            doc.setTextColor(...colors.masse);
+            doc.text('Masse', matrixX + matrixSize - 20, matrixY + matrixSize - 5);
+            doc.setTextColor(...colors.dilemme);
+            doc.text('Dilemme', matrixX + 5, matrixY + matrixSize - 5);
+            
+            // Positionner les personas
+            Object.keys(positionedPersonas).forEach(personaId => {
+                const position = positionedPersonas[personaId];
+                const stmt = db.prepare("SELECT name FROM personas WHERE id = ?");
+                stmt.bind([personaId]);
+                if (stmt.step()) {
+                    const persona = stmt.getAsObject();
+                    
+                    // Calculer la position sur la matrice PDF
+                    const pdfX = matrixX + ((position.volumeScore - 1) * matrixSize / 9);
+                    const pdfY = matrixY + ((10 - position.valueScore) * matrixSize / 9);
+                    
+                    // Déterminer la couleur
+                    let color = colors.dilemme;
+                    if (position.valueScore > 5 && position.volumeScore > 5) color = colors.champions;
+                    else if (position.valueScore > 5 && position.volumeScore <= 5) color = colors.pepites;
+                    else if (position.valueScore <= 5 && position.volumeScore > 5) color = colors.masse;
+                    
+                    // Dessiner le cercle
+                    doc.setFillColor(...color);
+                    doc.circle(pdfX, pdfY, 3, 'F');
+                    
+                    // Ajouter l'initiale
+                    doc.setTextColor(255, 255, 255);
+                    doc.setFontSize(6);
+                    doc.setFont('helvetica', 'bold');
+                    doc.text(persona.name.charAt(0).toUpperCase(), pdfX - 1, pdfY + 1);
+                }
+                stmt.free();
+            });
+            
+            // Analyse par quadrants
+            y = matrixY + matrixSize + 30;
+            
+            doc.setTextColor(0, 0, 0);
+            doc.setFontSize(16);
+            doc.setFont('helvetica', 'bold');
+            doc.text('ANALYSE PAR QUADRANTS', margin, y);
+            y += 15;
+            
+            const quadrants = [
+                { name: 'Champions', color: colors.champions, desc: 'Haute valeur, gros volume - Priorite absolue' },
+                { name: 'Pepites', color: colors.pepites, desc: 'Haute valeur, petit volume - Developper' },
+                { name: 'Masse', color: colors.masse, desc: 'Faible valeur, gros volume - Optimiser' },
+                { name: 'Dilemme', color: colors.dilemme, desc: 'Faible valeur, petit volume - Questionner' }
+            ];
+            
+            quadrants.forEach(quadrant => {
+                doc.setFillColor(...quadrant.color);
+                doc.rect(margin, y, 5, 8, 'F');
+                doc.setTextColor(0, 0, 0);
+                doc.setFontSize(12);
+                doc.setFont('helvetica', 'bold');
+                doc.text(quadrant.name, margin + 10, y + 6);
+                doc.setFontSize(9);
+                doc.setFont('helvetica', 'normal');
+                doc.text(quadrant.desc, margin + 40, y + 6);
+                
+                // Lister les personas de ce quadrant
+                let quadrantPersonas = [];
+                Object.keys(positionedPersonas).forEach(personaId => {
+                    const position = positionedPersonas[personaId];
+                    let inQuadrant = false;
+                    
+                    if (quadrant.name === 'Champions' && position.valueScore > 5 && position.volumeScore > 5) inQuadrant = true;
+                    else if (quadrant.name === 'Pepites' && position.valueScore > 5 && position.volumeScore <= 5) inQuadrant = true;
+                    else if (quadrant.name === 'Masse' && position.valueScore <= 5 && position.volumeScore > 5) inQuadrant = true;
+                    else if (quadrant.name === 'Dilemme' && position.valueScore <= 5 && position.volumeScore <= 5) inQuadrant = true;
+                    
+                    if (inQuadrant) {
+                        const stmt = db.prepare("SELECT name FROM personas WHERE id = ?");
+                        stmt.bind([personaId]);
+                        if (stmt.step()) {
+                            quadrantPersonas.push(stmt.getAsObject().name);
+                        }
+                        stmt.free();
+                    }
+                });
+                
+                if (quadrantPersonas.length > 0) {
+                    doc.setFontSize(8);
+                    doc.setFont('helvetica', 'italic');
+                    doc.setTextColor(100, 100, 100);
+                    doc.text(`Personas: ${quadrantPersonas.join(', ')}`, margin + 10, y + 14);
+                    y += 20;
+                } else {
+                    y += 12;
+                }
+            });
+            
+            // Footer
+            const footerY = doc.internal.pageSize.height - 15;
+            doc.setTextColor(108, 117, 125);
+            doc.setFontSize(8);
+            doc.setFont('helvetica', 'normal');
+            doc.text('Generateur de Personas - Matrice de Positionnement', margin, footerY);
+            
+            // Sauvegarder
+            const fileName = `matrice-positionnement-${new Date().toISOString().split('T')[0]}.pdf`;
+            doc.save(fileName);
+            
+            showStatus(`📄 PDF de la matrice généré: ${fileName}`);
         }
 
         // Event listeners pour l'aperçu en temps réel
