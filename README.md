@@ -26,7 +26,7 @@ Un outil web gratuit et open-source pour créer, gérer et analyser vos personas
 - **Données JSON** : Export structuré pour analyse externe
 - **PDF Matrice** : Rapport complet avec analyse par quadrants
 
-## 🚀 Comment utiliser l'outil
+## Comment utiliser l'outil
 
 ### 1. Création d'un Persona
 1. Ouvrez l'outil dans votre navigateur
@@ -46,7 +46,7 @@ Un outil web gratuit et open-source pour créer, gérer et analyser vos personas
 - **Matrice complète** : Utilisez les boutons d'export dans la section matrice
 - **Données globales** : "📊 Exporter données" pour un backup JSON
 
-## 💡 Pourquoi utiliser cet outil ?
+## Pourquoi utiliser cet outil ?
 
 ### Pour les Marketeurs
 - **Standardisation** : Format uniforme pour tous vos personas
@@ -66,7 +66,7 @@ Un outil web gratuit et open-source pour créer, gérer et analyser vos personas
 - **Documentation** : Historique et sauvegarde de tous les personas
 - **Présentation client** : Exports professionnels prêts à présenter
 
-## 🆓 Gratuit et Open Source
+## Gratuit et Open Source
 
 Cet outil est **100% gratuit** et **open source** :
 
@@ -100,13 +100,13 @@ open index.html
 - **jsPDF** : Génération de PDF
 - **Canvas API** : Export d'images
 
-## 📱 Compatibilité
+## Compatibilité
 
 - ✅ Chrome, Firefox, Safari, Edge (versions récentes)
 - ✅ Desktop et mobile
 - ✅ Fonctionne hors ligne après le premier chargement
 
-## 🤝 Contribution
+## Contribution
 
 Ce projet est open source ! N'hésitez pas à :
 - Signaler des bugs
@@ -114,7 +114,7 @@ Ce projet est open source ! N'hésitez pas à :
 - Contribuer au code
 - Partager l'outil
 
-## 📄 Licence
+## Licence
 
 Ce projet est sous licence libre. Vous êtes libre de l'utiliser, le modifier et le distribuer.
 
